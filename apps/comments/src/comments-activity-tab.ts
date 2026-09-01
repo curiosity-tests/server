@@ -15,7 +15,7 @@ import { getComments } from './services/GetComments.ts'
  * Register the comments plugins for the Activity sidebar
  */
 export function registerCommentsPlugins() {
-	let app: App
+	let app: App | undefined
 
 	window.OCA.Activity.registerSidebarAction({
 		mount: async (el: HTMLElement, { node, reload }: { node: INode, reload: () => void }) => {
