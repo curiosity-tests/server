@@ -1,27 +1,66 @@
+
+# racecar fork-testbed patch. Changes from upstream:
+#   1. workflow_dispatch with a `leg` input so racecar can drive the run and pick
+#      baseline vs instrumented.
+#   2. actions/checkout -> crashappsec/action-checkout, which wraps checkout and
+#      setup-chalk-action; `chalk:` is the only variable separating the arms.
+#   3. permissions: id-token: write for the action's OIDC connect (the block
+#      zeroes unlisted scopes, so everything upstream relied on is restated).
+#   4. A fail-closed assertion on the instrumented arm.
+#   5. fail-fast: false on every matrix -- a measurement-integrity change, not a
+#      build change: the instrumented arm has strictly more failure surface, so
+#      leaving fail-fast on cancels instrumented siblings more often than
+#      baseline ones and biases the comparison.
+#   6. the concurrency group carries the leg. Both arms run on the same ref, so
+#      upstream's github.ref-keyed group put them in one group and the second
+#      dispatch cancelled the first. Also cancellation-only, never a build change.
+# Build and test COMMANDS are unchanged from upstream.
 # SPDX-FileCopyrightText: 2026 Nextcloud GmbH and Nextcloud contributors
 # SPDX-License-Identifier: MIT
 
 name: PHPUnit
 
+run-name: "PHPUnit ${{ inputs.leg || 'push' }} ${{ inputs.racecar_run }}"
+
 on:
+  workflow_dispatch:
+    inputs:
+      leg:
+        description: "baseline (uninstrumented) or instrumented (under chalk/curiosity)"
+        type: choice
+        options: [instrumented, baseline]
+        default: instrumented
+      profile:
+        description: "CrashOverride chalk profile"
+        type: string
+        default: curiosity-tests-racecar
+      racecar_run:
+        description: "racecar correlation token, echoed into the run name"
+        type: string
+        default: ""
   pull_request:
   schedule:
     - cron: "5 2 * * *"
 
 permissions:
   contents: read
+  id-token: write
 
 concurrency:
-  group: phpunit-${{ github.head_ref || github.run_id }}
+  group: phpunit-${{ github.head_ref || github.run_id }}-${{ inputs.leg || 'push' }}
   cancel-in-progress: true
 
 # GitHub allows a maximum of 20 reusable workflows per caller
+env:
+  CHALK_ON: ${{ github.event_name == 'workflow_dispatch' && inputs.leg != 'baseline' }}
+
 jobs:
   changes:
-    runs-on: ubuntu-latest-low
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: read
+      id-token: write
 
     outputs:
       src: ${{ steps.changes.outputs.src }}
@@ -59,56 +98,117 @@ jobs:
     needs: changes
     if: needs.changes.outputs.src != 'false'
     uses: ./.github/workflows/phpunit-mariadb.yml
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      leg: ${{ inputs.leg }}
+      profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
 
   memcached:
     needs: changes
     if: needs.changes.outputs.src != 'false'
     uses: ./.github/workflows/phpunit-memcached.yml
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      leg: ${{ inputs.leg }}
+      profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
 
   mysql:
     needs: changes
     if: needs.changes.outputs.src != 'false'
     uses: ./.github/workflows/phpunit-mysql.yml
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      leg: ${{ inputs.leg }}
+      profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
 
   mysql-sharding:
     needs: changes
     if: needs.changes.outputs.src != 'false'
     uses: ./.github/workflows/phpunit-mysql-sharding.yml
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      leg: ${{ inputs.leg }}
+      profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
 
   object-store-primary:
     needs: changes
     if: needs.changes.outputs.src != 'false'
     uses: ./.github/workflows/phpunit-object-store-primary.yml
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      leg: ${{ inputs.leg }}
+      profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
 
   oci:
     needs: changes
     if: needs.changes.outputs.src != 'false'
     uses: ./.github/workflows/phpunit-oci.yml
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      leg: ${{ inputs.leg }}
+      profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
 
   pgsql:
     needs: changes
     if: needs.changes.outputs.src != 'false'
     uses: ./.github/workflows/phpunit-pgsql.yml
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      leg: ${{ inputs.leg }}
+      profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
 
   sqlite:
     needs: changes
     if: needs.changes.outputs.src != 'false'
     uses: ./.github/workflows/phpunit-sqlite.yml
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      leg: ${{ inputs.leg }}
+      profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
 
   nodb:
     needs: changes
     if: needs.changes.outputs.src != 'false' || needs.changes.outputs.resources != 'false'
     uses: ./.github/workflows/phpunit-nodb.yml
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      leg: ${{ inputs.leg }}
+      profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
 
   kvstore:
     needs: changes
     if: needs.changes.outputs.kvstore != 'false'
     uses: ./.github/workflows/phpunit-kvstore.yml
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      leg: ${{ inputs.leg }}
+      profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
 
   summary:
     permissions:
       contents: none
-    runs-on: ubuntu-latest-low
+      id-token: write
+    runs-on: ubuntu-latest
     needs: [changes, mariadb, memcached, mysql, mysql-sharding, object-store-primary, oci, pgsql, sqlite, nodb, kvstore]
 
     if: always()
