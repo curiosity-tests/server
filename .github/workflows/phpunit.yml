@@ -47,8 +47,8 @@ permissions:
   id-token: write
 
 concurrency:
-  group: phpunit-${{ github.head_ref || github.run_id }}-${{ inputs.leg || 'push' }}
-  cancel-in-progress: true
+  group: phpunit-${{ github.head_ref || github.run_id }}-${{ inputs.leg || 'push' }}-${{ inputs.racecar_run }}
+  cancel-in-progress: false
 
 # GitHub allows a maximum of 20 reusable workflows per caller
 env:
@@ -98,111 +98,51 @@ jobs:
     needs: changes
     if: needs.changes.outputs.src != 'false'
     uses: ./.github/workflows/phpunit-mariadb.yml
-    permissions:
-      contents: read
-      id-token: write
-    with:
-      leg: ${{ inputs.leg }}
-      profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
 
   memcached:
     needs: changes
     if: needs.changes.outputs.src != 'false'
     uses: ./.github/workflows/phpunit-memcached.yml
-    permissions:
-      contents: read
-      id-token: write
-    with:
-      leg: ${{ inputs.leg }}
-      profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
 
   mysql:
     needs: changes
     if: needs.changes.outputs.src != 'false'
     uses: ./.github/workflows/phpunit-mysql.yml
-    permissions:
-      contents: read
-      id-token: write
-    with:
-      leg: ${{ inputs.leg }}
-      profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
 
   mysql-sharding:
     needs: changes
     if: needs.changes.outputs.src != 'false'
     uses: ./.github/workflows/phpunit-mysql-sharding.yml
-    permissions:
-      contents: read
-      id-token: write
-    with:
-      leg: ${{ inputs.leg }}
-      profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
 
   object-store-primary:
     needs: changes
     if: needs.changes.outputs.src != 'false'
     uses: ./.github/workflows/phpunit-object-store-primary.yml
-    permissions:
-      contents: read
-      id-token: write
-    with:
-      leg: ${{ inputs.leg }}
-      profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
 
   oci:
     needs: changes
     if: needs.changes.outputs.src != 'false'
     uses: ./.github/workflows/phpunit-oci.yml
-    permissions:
-      contents: read
-      id-token: write
-    with:
-      leg: ${{ inputs.leg }}
-      profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
 
   pgsql:
     needs: changes
     if: needs.changes.outputs.src != 'false'
     uses: ./.github/workflows/phpunit-pgsql.yml
-    permissions:
-      contents: read
-      id-token: write
-    with:
-      leg: ${{ inputs.leg }}
-      profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
 
   sqlite:
     needs: changes
     if: needs.changes.outputs.src != 'false'
     uses: ./.github/workflows/phpunit-sqlite.yml
-    permissions:
-      contents: read
-      id-token: write
-    with:
-      leg: ${{ inputs.leg }}
-      profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
 
   nodb:
     needs: changes
     if: needs.changes.outputs.src != 'false' || needs.changes.outputs.resources != 'false'
     uses: ./.github/workflows/phpunit-nodb.yml
-    permissions:
-      contents: read
-      id-token: write
-    with:
-      leg: ${{ inputs.leg }}
-      profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
 
   kvstore:
     needs: changes
     if: needs.changes.outputs.kvstore != 'false'
     uses: ./.github/workflows/phpunit-kvstore.yml
-    permissions:
-      contents: read
-      id-token: write
-    with:
-      leg: ${{ inputs.leg }}
-      profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
 
   summary:
     permissions:
