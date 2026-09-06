@@ -52,7 +52,7 @@ concurrency:
 
 # GitHub allows a maximum of 20 reusable workflows per caller
 env:
-  CHALK_ON: ${{ github.event_name == 'workflow_dispatch' && inputs.leg != 'baseline' }}
+  CHALK_ON: ${{ inputs.leg == 'instrumented' }}
 
 jobs:
   changes:
