@@ -10,9 +10,6 @@ name: Apply rector changes
 
 on:
   workflow_dispatch:
-  schedule:
-    # At 14:30 on Sundays
-    - cron: '30 14 * * 0'
 
 permissions:
   contents: read

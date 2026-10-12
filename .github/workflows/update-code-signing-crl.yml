@@ -4,8 +4,6 @@ name: Update code signing revocation list
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "5 2 * * *"
 
 permissions:
   contents: read
